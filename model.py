@@ -48,9 +48,9 @@ class Discriminator(tf.keras.Model):
         return result
 
     def call(self, x):
-        x = self.ccn_0(x)
+        x = self.cnn_0(x)
         x = self.leaky1(x)
-        for convo in self.convoblock:
+        for convo in self.cnn_block:
             x = convo(x)
         x = self.flatten(x)
         x = self.dense1(x)
@@ -66,9 +66,9 @@ class Generator(tf.keras.Model):
         self.rate = rate
         self.discriminator = Discriminator
         self.blocks = 16
-        self.convo0 = tf.keras.layers.Conv2D(filters = 64, kernel_size=9 , strides = 1, padding='same')
-        self.convo1 = tf.keras.layers.Conv2D(filters = 64, kernel_size=3 , strides = 1, padding='same')
-        self.convo2 = tf.keras.layers.Conv2D(filters = 64, kernel_size=3 , strides = 1, padding='same')
+        self.cnn_0 = tf.keras.layers.Conv2D(filters = 64, kernel_size=9 , strides = 1, padding='same')
+        self.cnn_1 = tf.keras.layers.Conv2D(filters = 64, kernel_size=3 , strides = 1, padding='same')
+        self.cnn_2 = tf.keras.layers.Conv2D(filters = 3, kernel_size=9 , strides = 1, padding='same')
         self.residualblocks = []
         for i in range(16):
             result = tf.keras.Sequential()
@@ -77,25 +77,24 @@ class Generator(tf.keras.Model):
             result.add(tf.keras.layers.PReLU(shared_axes=[1,2]))
             result.add(tf.keras.layers.Conv2D(filters = 64, kernel_size = 3, strides = 1, padding = 'same', use_bias = False))
             self.residualblocks.append(result)
-        self.upsample1 = tf.keras.layers.Conv2DTranspose(256, 4, strides=2, padding='same', activation='linear')
-        self.upsample2 = tf.keras.layers.Conv2DTranspose(256, 4, strides=2, padding='same', activation='linear')
+        self.upsample1 = tf.keras.layers.Conv2DTranspose(256, kernel_size = 3, strides=1, padding='same', activation='linear')
+        self.upsample2 = tf.keras.layers.Conv2DTranspose(256, kernel_size = 3, strides=1, padding='same', activation='linear')
 
 
     def __call__(self, x):
-        print(self.convo0)
-        x = self.convo0(x)
+        x = self.cnn_0(x)
         x = tf.keras.layers.PReLU(shared_axes=[1,2])(x)
         skip = x
         for residuallayer in self.residualblocks:
             skipx = x
             x = residuallayer(x)
             x += skipx
-        x = self.convo1(x)
+        x = self.cnn_1(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x += skip
         x = self.upsample1(x)
         x = self.upsample2(x)
-        x = self.convo2(x)
+        x = self.cnn_2(x)
         return x
 
 class VGG():
@@ -103,14 +102,13 @@ class VGG():
         self.shape = shape
 
     def loss(self, y, pred):
-        print(type(y), type(pred))
         vgg19 = VGG19(include_top=False, weights='imagenet', input_shape=self.shape)
         vgg19.trainable = False
         for l in vgg19.layers:
             l.trainable = False
         model = Model(inputs=vgg19.input, outputs=vgg19.get_layer('block5_conv4').output)
         model.trainable = False
-        return K.mean(K.square(model(y[np.newaxis, :,  :, :]) - model(pred[np.newaxis, :,  :, :])))
+        return K.mean(K.square(model(y) - model(pred)))
 
     def optimizer():
         adam = Adam(lr=1E-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08)

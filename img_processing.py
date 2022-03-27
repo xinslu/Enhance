@@ -2,6 +2,8 @@ import tensorflow as tf
 import imageio
 import numpy as np
 import matplotlib.pyplot as plt
+
+
 def getimages(file_name, path):
     return imageio.imread(path + file_name)
 
