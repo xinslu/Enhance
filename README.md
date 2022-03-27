@@ -10,4 +10,6 @@ A resnet is characterized by two important things: Residual Block and Skip Conne
 
 The reason why resnets work are because with skip connections and residual blocks you have that it is much easier to learn indenity mapping. The advantage of this is with ReLu activation, if the deep neural network nudges it towards a wrong and negative or zero direction it will be mapped to the indentity of the place from where the skip connection is established. The disadvantage of plain deep neural networks is that for them it is hard to maintain even indentity mapping and thus it resnets help maintain stability with larger amount of layers.
 
+# Dataset
 
+Dataset is DIV2k(https://data.vision.ee.ethz.ch/cvl/DIV2K/). I don't own the rights to any of these images.
